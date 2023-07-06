@@ -1,28 +1,31 @@
-#include "i2c.h"
+#include <SPI.h>
+#include "driver_st7920.h"
 
-void setup() {
-  // put your setup code here, to run once:
-  setPin();
-  start();
-  writeByte(0b01001000);
-  writeByte(0b00000001);
-  stop();
+void setup () {
+  Serial.begin(9600);
+
+
+  SPI.begin();
+  SPI.beginTransaction(SPISettings(600000, MSBFIRST, SPI_MODE3));
+
+  testInstruction(0b0000110000); // basic function set
+  testInstruction(0b0000001111); // display on, cursor on, cursor blink on
+  testInstruction(0b0000000001); // display clear
+  testInstruction(0b0000000110); // cursor moves right
+  testInstruction(0b0000000010); // set cursor to home
+
+  // play with DDRAM address
+  delay(1000);
+  testInstruction(0b0010000001);
+  delay(1000);
+  testInstruction(0b0010001000);
+  delay(1000);
+  testInstruction(0b0010010000);
+
+  testInstruction(0b0010000000);
 }
 
-void loop() {
-  // put your main code here, to run repeatedly:
-  int i, j;
-  byte digits[4] = {0b01101000, 0b01101010, 0b01101100, 0b01101110};
-
-  for (i = 0b00000000; i <= 0b11111111; i++)
-  {
-    for (j = 0; j < 4; j++)
-    {
-      start();
-      writeByte(digits[j]);
-      writeByte(i);
-      stop();
-    }
-    delay(100);
-  }
+void loop () {
+  testInstruction(0b1000001011);
+  testInstruction(0b1000001011);
 }
