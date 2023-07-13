@@ -5,8 +5,8 @@
 
 volatile static char instructionSet_ST7920 = 'B'; // Current instruction set: 'B' - basic, 'E' - extended.
 volatile static bool displayStatus_ST7920 = true; // true - display ON, false - display OFF. (irrelevant to backlight)
-volatile static bool cursorStatus_ST7920 = true; // true - show cursor, false - hide cursor.
-volatile static bool cursorBlinkStatus_ST7920 = true; // true - cursor blinks, false - cursor remains bright.
+volatile static bool underlineCursorStatus_ST7920 = true; // true - show underline cursor, false - hide underline cursor.
+volatile static bool blinkCursorStatus_ST7920 = true; // true - show blink cursor, false - hide blink cursor.
 
 
 /* Instruction structure is same to that in datasheet:
@@ -91,8 +91,8 @@ void initialize_ST7920() {
   // set display status according to global variables defined at the beginning.
   short displayControl = 0b0000001000;
   if (displayStatus_ST7920) displayControl |=  0b0000000100;
-  if (cursorStatus_ST7920) displayControl |= 0b0000000010;
-  if (cursorBlinkStatus_ST7920) displayControl |= 0b0000000001;
+  if (underlineCursorStatus_ST7920) displayControl |= 0b0000000010;
+  if (blinkCursorStatus_ST7920) displayControl |= 0b0000000001;
   sendInstruction_ST7920(displayControl);
   delayMicroseconds(20);
 
@@ -105,7 +105,7 @@ void initialize_ST7920() {
 }
 
 
-/* Fill DDRAM with space character.
+/* Fill DDRAM with space (clear half height and full sized characters).
    Move cursor to home (left end of the first line) by setting address counter to 0x00. */
 void clearCharacterDisplay_ST7920() {
   chooseInstructionSet_ST7920('B');
@@ -124,17 +124,23 @@ void setDisplayStatus_ST7920(char option, bool status) {
       displayStatus_ST7920 = status;
       break;
     case 'C':
-      cursorStatus_ST7920 = status;
+      underlineCursorStatus_ST7920 = status;
       break;
     case 'B':
-      cursorBlinkStatus_ST7920 = status;
+      blinkCursorStatus_ST7920 = status;
       break;
   }
   if (displayStatus_ST7920) instruction |=  0b0000000100;
-  if (cursorStatus_ST7920) instruction |= 0b0000000010;
-  if (cursorBlinkStatus_ST7920) instruction |= 0b0000000001;
+  if (underlineCursorStatus_ST7920) instruction |= 0b0000000010;
+  if (blinkCursorStatus_ST7920) instruction |= 0b0000000001;
   sendInstruction_ST7920(instruction);
 }
+
+
+void printHalfCharacters();
+
+
+void printFullCharacters();
 
 
 void test() {
@@ -142,30 +148,83 @@ void test() {
 
   sendInstruction_ST7920(0b1010100100);
   sendInstruction_ST7920(0b1011001010);
-  
+  delay(1000);
+
   sendInstruction_ST7920(0b1010100100);
   sendInstruction_ST7920(0b1011001110);
+  delay(1000);
+
+  setEntryMode_ST7920('C', 'L');
 
   sendInstruction_ST7920(0b1010100100);
   sendInstruction_ST7920(0b1011001111);
+  delay(1000);
 
   sendInstruction_ST7920(0b1010100100);
   sendInstruction_ST7920(0b1010001111);
+  delay(1000);
 
-  sendInstruction_ST7920(0b1010100100);
-  sendInstruction_ST7920(0b1011000111);
+  setEntryMode_ST7920('C', 'R');
 
-  sendInstruction_ST7920(0b1010100100);
-  sendInstruction_ST7920(0b1111001111);
+  sendInstruction_ST7920(0b1010111010);
+  sendInstruction_ST7920(0b1010111010);
+  delay(1000);
 
-  sendInstruction_ST7920(0b1010100100);
-  sendInstruction_ST7920(0b1011001101);
+  sendInstruction_ST7920(0b1011010111);
+  sendInstruction_ST7920(0b1011010110);
+  delay(1000);
 
-  sendInstruction_ST7920(0b1010100100);
-  sendInstruction_ST7920(0b1011001001);
+  sendInstruction_ST7920(0b1011001111);
+  sendInstruction_ST7920(0b1011010100);
+  delay(1000);
 
-  sendInstruction_ST7920(0b1000101001);
-  sendInstruction_ST7920(0b1000101001);
+  sendInstruction_ST7920(0b1011001010);
+  sendInstruction_ST7920(0b1010111110);
+  delay(1000);
+
+  homeCursor_ST7920();
+  delay(1000);
+
+  setDisplayStatus_ST7920('C', false);
+  setDisplayStatus_ST7920('B', false);
+
+  // problematic for loop
+  for (int i = 0; i < 8; i++) {
+    shiftDisplay_ST7920('R');
+    delay(500);
+  }
+  for (int i = 0; i < 8; i++) {
+    shiftDisplay_ST7920('L');
+    delay(500);
+  }
+
+  
+  for (int i = 0; i < 8; i++) {
+    moveCursor_ST7920('R');
+    delay(500);
+  }
+  for (int i = 0; i < 8; i++) {
+    moveCursor_ST7920('L');
+    delay(500);
+  }
+  
+  setDisplayStatus_ST7920('D', false);
+  delay(1000);
+  setDisplayStatus_ST7920('D', true);
+  delay(1000);
+
+  setDisplayStatus_ST7920('B', false);
+  delay(1000);
+  setDisplayStatus_ST7920('B', true);
+  delay(1000);
+
+  setDisplayStatus_ST7920('C', false);
+  delay(1000);
+  setDisplayStatus_ST7920('C', true);
+  delay(1000);
+
+  clearCharacterDisplay_ST7920();
+  delay(1000);
 }
 
 /* DDRAM address is used to locate the character going to be shown.
