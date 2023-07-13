@@ -1,8 +1,21 @@
 #ifndef DRIVER_ST7920_H
 #define DRIVER_ST7920_H
 
+/* Wire Connection for Arduino Nano:
+   Display Module - Nano Board
+   VCC - 5V
+   GND - GND
+   RS (CS) - D10 (SPI chip-select)
+   R/W (SID) - D11 (SPI master data output) 
+   E (SCLK) - D13 (SPI clock)
+   PSB - GND (select SPI as communication mode)
+   RST - 3V3 (never reset) 
+   BLA (backlight LED +) - 5V (some other module needs 3.3v)
+   BLK (backlight LED -) - GND */
+
 #include <Arduino.h>
 
+// 8*16 half height non-ascii character code
 #define SMILE_REVERSE 0x01
 #define SMILE 0x02
 #define HEART 0x03
